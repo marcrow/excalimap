@@ -920,22 +920,3 @@ The Active Directory mindmap (`excalimap/mindmap/ad/`) contains extensive real-w
 8. **Protocol/version splits** - Branch based on conditions (NTLMv1 vs NTLMv2)
 9. **Tool alternatives** - Multiple commands at same level = different tools for same task
 10. **Descriptive outputs** - Outputs describe what you get ("Hash found", "Admin access")
-
-## Next Steps
-
-1. **Start with example:** Copy `excalimap/mindmap/example/` as a template
-2. **Study AD examples:** Review `excalimap/mindmap/ad/*.md` for complex patterns
-3. **Test incrementally:** Generate after adding each section
-4. **View in Excalidraw:** Open `.excalidraw` file at https://excalidraw.com
-5. **Iterate:** Adjust colors, layout, and content based on visual output
-
-**Generate command:**
-```bash
-cd excalimap
-python3 main.py -f mindmap/your_folder -o output/your_mindmap.excalidraw
-```
-
-**View:**
-Open `output/your_mindmap.excalidraw` in https://excalidraw.com
-
-
