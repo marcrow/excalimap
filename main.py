@@ -52,6 +52,7 @@ if __name__ == "__main__":
     parser.add_argument('-t', '--theme', choices=['light', 'dark'], default='dark', help='Theme to use')
     parser.add_argument('-s','--style', choices=['classic', 'handraw'], default='classic', help='Style to use')
     parser.add_argument('-o', '--output', default='output/mindmap.excalidraw', help='output file')
+    parser.add_argument('--format', choices=['excalidraw', 'svg'], default='excalidraw', help='Output format (excalidraw or svg)')
     args = parser.parse_args()
 
     # set config
@@ -92,11 +93,35 @@ if __name__ == "__main__":
 
     json_output = draw(containers_matrix, conf['main_title'], conf['main_title_logo'])
 
-    try:
-        f = open(args.output, "w", encoding="utf-8")
-        f.write(json_output)
-        f.close()
-        print(f'Mindmap result in file : {args.output}')
-    except Exception as e:
-        print(f"Exception during file creation {e}")
-        sys.exit(1)
+    # Handle output format
+    if args.format == 'svg':
+        # Import SVG renderer
+        from svg_renderer import SVGRenderer
+
+        # Determine output filename
+        output_file = args.output
+        if not output_file.endswith('.svg'):
+            # Replace .excalidraw with .svg or add .svg
+            if output_file.endswith('.excalidraw'):
+                output_file = output_file.replace('.excalidraw', '.svg')
+            else:
+                output_file += '.svg'
+
+        try:
+            # Render to SVG
+            renderer = SVGRenderer(json_output, theme=args.theme)
+            renderer.save(output_file)
+            print(f'SVG mindmap result in file : {output_file}')
+        except Exception as e:
+            print(f"Exception during SVG creation: {e}")
+            sys.exit(1)
+    else:
+        # Standard excalidraw JSON output
+        try:
+            f = open(args.output, "w", encoding="utf-8")
+            f.write(json_output)
+            f.close()
+            print(f'Mindmap result in file : {args.output}')
+        except Exception as e:
+            print(f"Exception during file creation {e}")
+            sys.exit(1)

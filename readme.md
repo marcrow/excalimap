@@ -19,9 +19,21 @@ Then to generate your mindmap select your project directory:
 
 ```bash
 python3 main.py -f <source_file> -o <excalidraw_file_destination>
-for example with the ocd-mindmap project
+# For example with the ocd-mindmap project
 python3 main.py -f ../ocd-mindmaps/excalimap/mindmap/ad/ -o output/ad.excalidraw
+
+# To export as SVG instead (avoids font embedding issues)
+python3 main.py -f ../ocd-mindmaps/excalimap/mindmap/ad/ -o output/ad.svg --format svg
 ```
+
+### Export Formats
+
+Excalimap supports two output formats:
+
+- **Excalidraw JSON** (default): `.excalidraw` files that can be opened in Excalidraw
+- **SVG**: Direct SVG export without font embedding issues
+
+Use `--format svg` to export directly to SVG. This is useful if you experience font-related errors when exporting from Excalidraw's web interface or VS Code extension.
 
 There is also a development mode :) 
 
@@ -35,12 +47,15 @@ pip3 install -r requirements.txt
 Then you can execute :
 ```bash
 ./scripts/watch.py -f ../ocd-mindmaps/excalimap/mindmap/ad/
+
+# For SVG watch mode
+./scripts/watch.py -f ../ocd-mindmaps/excalimap/mindmap/ad/ -o output/mindmap.svg --format svg
 ```
 
-When you will edit file in ../ocd-mindmaps/excalimap/mindmap/ad/
-it will generate a new version in output/minmap.excalidraw.
+When you edit files in `../ocd-mindmaps/excalimap/mindmap/ad/`, it will automatically regenerate the output file.
 
-Then, you can directly open it with excalidraw vs code extension or load it in your browser.
+For `.excalidraw` files, you can directly open them with the Excalidraw VS Code extension or load them in your browser.
+For `.svg` files, you can open them directly in any browser or image viewer.
 
 
 ## Syntax Table of Contents

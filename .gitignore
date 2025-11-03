@@ -1,6 +1,4 @@
 .venv
 __pycache__
 .idea
-output/*.excalidraw
-output/svg/*.svg
-output/svg/*.png
+output/*

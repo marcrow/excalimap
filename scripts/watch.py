@@ -13,11 +13,12 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
 class MindmapWatcher(FileSystemEventHandler):
-    def __init__(self, mindmap_folder, output_file, theme='dark', style='classic'):
+    def __init__(self, mindmap_folder, output_file, theme='dark', style='classic', output_format='excalidraw'):
         self.mindmap_folder = mindmap_folder
         self.output_file = output_file
         self.theme = theme
         self.style = style
+        self.output_format = output_format
         self.last_generation = 0
         self.debounce_seconds = 1
 
@@ -38,7 +39,8 @@ class MindmapWatcher(FileSystemEventHandler):
             '-f', self.mindmap_folder,
             '-t', self.theme,
             '-s', self.style,
-            '-o', self.output_file
+            '-o', self.output_file,
+            '--format', self.output_format
         ]
 
         try:
@@ -70,6 +72,7 @@ def main():
     parser.add_argument('-o', '--output', default='output/mindmap.excalidraw', help='Output file')
     parser.add_argument('-t', '--theme', choices=['dark', 'light'], default='dark', help='Theme')
     parser.add_argument('-s', '--style', choices=['classic', 'handraw'], default='classic', help='Style')
+    parser.add_argument('--format', choices=['excalidraw', 'svg'], default='excalidraw', help='Output format')
 
     args = parser.parse_args()
 
@@ -82,12 +85,13 @@ def main():
     print("=" * 70)
     print(f"Watching:  {args.folder}")
     print(f"Output:    {args.output}")
+    print(f"Format:    {args.format}")
     print(f"Theme:     {args.theme}")
     print(f"Style:     {args.style}")
     print()
 
     # Initial generation
-    watcher = MindmapWatcher(args.folder, args.output, args.theme, args.style)
+    watcher = MindmapWatcher(args.folder, args.output, args.theme, args.style, args.format)
     watcher.generate_mindmap()
 
     abs_output = os.path.abspath(args.output)
