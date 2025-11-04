@@ -133,7 +133,9 @@ class SVGRenderer:
         svg_lines = []
         for i, line in enumerate(lines):
             line_y = text_y + (i * line_height)
-            svg_lines.append(f'''<tspan x="{text_x}" dy="{line_height if i > 0 else 0}">{line}</tspan>''')
+            # Use non-breaking space for empty lines to preserve them
+            display_line = line if line else '\u00A0'
+            svg_lines.append(f'''<tspan x="{text_x}" dy="{line_height if i > 0 else 0}">{display_line}</tspan>''')
 
         anchor = 'middle' if text_align == 'center' else ('end' if text_align == 'right' else 'start')
 

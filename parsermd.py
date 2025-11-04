@@ -68,10 +68,27 @@ class ParserMD:
         in_code_block = False
         code_block_lines = []
         code_block_id = 0
+        code_block_level = 0  # Track the level where code block started
         container_just_created = False
 
         for line in md_data:
-            #print(f'[+] parse line : {line}')
+            #print(f'[+] parse line : {repr(line)} | in_code_block={in_code_block} | level={level}')
+
+            # Safety check: if we hit structural markdown while in code block, close the code block
+            if in_code_block and (line.startswith('#') or (line.strip().startswith('- ') and not line.strip().startswith('- ``` '))):
+                # Force close the code block
+                #print(f'    >>> Force closing code block due to structural markdown')
+                id += 1
+                full_text = '\n'.join(code_block_lines)
+                text = full_text
+                new_obj = Command(text=text, comment="", link=None, is_cve=False, out=[],
+                                object_id=hash(f'{id}'), icon=None, tool_link=None)
+                level = code_block_level
+                parent[level] = new_obj
+                parent[level-1].content.append(new_obj)
+                code_block_lines = []
+                in_code_block = False
+                # Now continue processing this line normally (don't skip it)
 
             # Handle multi-line code blocks with ```
             if line.strip().startswith('```'):
@@ -79,24 +96,27 @@ class ParserMD:
                     # End of code block - create a command object with the full text
                     id += 1
                     full_text = '\n'.join(code_block_lines)
+                    #print(f'    Code block finished. Full text: {repr(full_text)}')
                     # Don't use split_text for code blocks - preserve original line breaks
                     text = full_text
                     new_obj = Command(text=text, comment="", link=None, is_cve=False, out=[],
                                     object_id=hash(f'{id}'), icon=None, tool_link=None)
-                    # Code blocks should be at level 3 (under a title)
-                    if level < 3:
-                        level = 3
+                    # Use the level we saved when starting the code block
+                    level = code_block_level
+                    # Code blocks CAN have children, so set them as parent
                     parent[level] = new_obj
                     parent[level-1].content.append(new_obj)
                     code_block_lines = []
                     in_code_block = False
                 else:
-                    # Start of code block
+                    # Start of code block - use current level (set by empty list item or previous item)
                     in_code_block = True
                     code_block_lines = []
-                    # Ensure we're at least at level 2 (title level)
-                    if level < 2:
-                        level = 2
+                    # Use current level, ensuring it's at least 3
+                    if level < 3:
+                        code_block_level = 3
+                    else:
+                        code_block_level = level
                 continue
 
             if in_code_block:
@@ -108,6 +128,7 @@ class ParserMD:
                 if leading_spaces > 0:
                     stripped_line = '\u00A0' * leading_spaces + stripped_line.lstrip(' ')
                 code_block_lines.append(stripped_line)
+                #print(f'    Added to code block: {repr(stripped_line)}')
                 continue
 
             cve = False
@@ -198,7 +219,7 @@ class ParserMD:
                     url = match.group(1)
                     parent[level].link = url
 
-            if line.strip().startswith('- `'):
+            if line.strip().startswith('- `') and '```' not in line:
                 match = re.search(r"(\s*)- `(.+)`", line)
                 spaces = len(match.group(1))
                 level = int(3 + spaces/2)
@@ -217,14 +238,42 @@ class ParserMD:
                 parent[level] = new_obj
                 parent[level-1].content.append(new_obj)
 
-            elif line.strip().startswith('- '):
-                match = re.search(r"(\s*)- (.+)", line)
-                spaces = len(match.group(1))
-                level = int(3 + spaces / 2)
-                text = Utils.split_text(match.group(2), Config.info_new_line_nb_chars)
+            elif line.strip().startswith('-'):
+                # Check if this line contains a code block marker
+                if '```' in line:
+                    # This is "- ```" format - extract level and start code block
+                    spaces_match = re.search(r"(\s*)-\s*", line)
+                    if spaces_match:
+                        spaces = len(spaces_match.group(1))
+                        level = int(3 + spaces / 2)
+                        # Start code block at this level
+                        in_code_block = True
+                        code_block_lines = []
+                        code_block_level = level
+                        #print(f'    >>> Started code block at level {level}')
+                    continue
 
-                new_obj = Info(text=text,comment="",link=None,is_cve=cve, out=out, object_id=hash(f'{id}'))
-                parent[level] = new_obj
-                parent[level-1].content.append(new_obj)
+                match = re.search(r"(\s*)- (.+)", line)
+                if match:
+                    spaces = len(match.group(1))
+                    level = int(3 + spaces / 2)
+                    content = match.group(2).strip()
+
+                    # Skip if content is empty or only whitespace
+                    if not content:
+                        # Empty list item - just set level for next item
+                        continue
+
+                    text = Utils.split_text(content, Config.info_new_line_nb_chars)
+                    new_obj = Info(text=text,comment="",link=None,is_cve=cve, out=out, object_id=hash(f'{id}'))
+                    parent[level] = new_obj
+                    parent[level-1].content.append(new_obj)
+                else:
+                    # Empty list item (just "-" with no text and maybe no space) - might be followed by code block
+                    # Calculate level but don't create an object yet
+                    spaces_match = re.search(r"(\s*)-\s*$", line)
+                    if spaces_match:
+                        spaces = len(spaces_match.group(1))
+                        level = int(3 + spaces / 2)
 
         return container
