@@ -55,7 +55,7 @@ class ParserMD:
         parent_item.out.append(new_obj)
 
     @staticmethod
-    def parse_md_to_objects(md_data, conf):
+    def parse_md_to_objects(md_data, conf, md_file='unknown'):
         # # load yml
         # with open("mindmap/conf.yml", "r", encoding="utf-8") as file:
         #     conf = yaml.safe_load(file)
@@ -71,7 +71,7 @@ class ParserMD:
         code_block_level = 0  # Track the level where code block started
         container_just_created = False
 
-        for line in md_data:
+        for line_num, line in enumerate(md_data, start=1):
             #print(f'[+] parse line : {repr(line)} | in_code_block={in_code_block} | level={level}')
 
             # Safety check: if we hit structural markdown while in code block, close the code block
@@ -85,6 +85,18 @@ class ParserMD:
                                 object_id=hash(f'{id}'), icon=None, tool_link=None)
                 level = code_block_level
                 parent[level] = new_obj
+
+                # Check if parent level exists
+                if (level-1) not in parent:
+                    raise ValueError(
+                        f"Markdown hierarchy error in '{md_file}':\n"
+                        f"  Found code block at indentation level {level}\n"
+                        f"  but no parent exists at level {level-1}.\n"
+                        f"  Ensure you have a proper hierarchy:\n"
+                        f"    # Container → ## Title → - ``` code block\n"
+                        f"  Current line: {line_num}"
+                    )
+
                 parent[level-1].content.append(new_obj)
                 code_block_lines = []
                 in_code_block = False
@@ -105,6 +117,18 @@ class ParserMD:
                     level = code_block_level
                     # Code blocks CAN have children, so set them as parent
                     parent[level] = new_obj
+
+                    # Check if parent level exists
+                    if (level-1) not in parent:
+                        raise ValueError(
+                            f"Markdown hierarchy error in '{md_file}':\n"
+                            f"  Found code block at indentation level {level}\n"
+                            f"  but no parent exists at level {level-1}.\n"
+                            f"  Ensure you have a proper hierarchy:\n"
+                            f"    # Container → ## Title → - ``` code block\n"
+                            f"  Current line: {line_num}"
+                        )
+
                     parent[level-1].content.append(new_obj)
                     code_block_lines = []
                     in_code_block = False
@@ -236,6 +260,18 @@ class ParserMD:
 
                 new_obj = Command(text=text,comment="",link=None,is_cve=cve, out=out, object_id=hash(f'{id}'), icon=icon, tool_link=tool_link)
                 parent[level] = new_obj
+
+                # Check if parent level exists
+                if (level-1) not in parent:
+                    raise ValueError(
+                        f"Markdown hierarchy error in '{md_file}':\n"
+                        f"  Found command at indentation level {level} (line: '{line.strip()}')\n"
+                        f"  but no parent exists at level {level-1}.\n"
+                        f"  Ensure you have a proper hierarchy:\n"
+                        f"    # Container → ## Title → - `command` → (2-space indent) - child\n"
+                        f"  Current line: {line_num}"
+                    )
+
                 parent[level-1].content.append(new_obj)
 
             elif line.strip().startswith('-'):
@@ -267,6 +303,18 @@ class ParserMD:
                     text = Utils.split_text(content, Config.info_new_line_nb_chars)
                     new_obj = Info(text=text,comment="",link=None,is_cve=cve, out=out, object_id=hash(f'{id}'))
                     parent[level] = new_obj
+
+                    # Check if parent level exists
+                    if (level-1) not in parent:
+                        raise ValueError(
+                            f"Markdown hierarchy error in '{md_file}':\n"
+                            f"  Found item at indentation level {level} (line: '{line.strip()}')\n"
+                            f"  but no parent exists at level {level-1}.\n"
+                            f"  Ensure you have a proper hierarchy:\n"
+                            f"    # Container → ## Title → - item → (2-space indent) - child → (4-space indent) - grandchild\n"
+                            f"  Current line: {line_num}"
+                        )
+
                     parent[level-1].content.append(new_obj)
                 else:
                     # Empty list item (just "-" with no text and maybe no space) - might be followed by code block

@@ -87,7 +87,7 @@ if __name__ == "__main__":
                 with open(f'{mm_folder}/{md_file}.md', "r", encoding="utf-8") as file:
                     print(f'[+] parse file : {md_file}')
                     data = file.readlines()
-                    container_obj = ParserMD.parse_md_to_objects(data, conf)
+                    container_obj = ParserMD.parse_md_to_objects(data, conf, md_file)
                     containers_col.append(container_obj)
         containers_matrix.append(containers_col)
 
